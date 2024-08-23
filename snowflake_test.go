@@ -44,8 +44,8 @@ func TestGenerateId(t *testing.T) {
 func TestGenerateIdConcurrency(t *testing.T) {
 	var wg sync.WaitGroup
 	var idSet sync.Map       // 所有生成的id
-	numProcesses := 10       // 模拟进程数量
-	numGoroutines := 100     // 每个进程启动的协程数量
+	numProcesses := 3        // 模拟进程数量
+	numGoroutines := 20      // 每个进程启动的协程数量
 	numIdsPerGoroutine := 10 // 每个协程生成id数量
 
 	for i := 0; i < numProcesses; i++ {
@@ -63,17 +63,20 @@ func TestGenerateIdConcurrency(t *testing.T) {
 					if _, loaded := idSet.LoadOrStore(id, true); loaded {
 						t.Errorf("duplicate id found: %d", id)
 					}
-					time.Sleep(time.Duration(500+rand.Int()%500) * time.Millisecond)
+					fmt.Printf("%d\r", id)
+					time.Sleep(time.Duration(100+rand.Int()%400) * time.Millisecond)
 				}
 			}()
+			time.Sleep(time.Duration(100+rand.Int()%400) * time.Millisecond)
 		}
+		time.Sleep(time.Duration(100+rand.Int()%400) * time.Millisecond)
 	}
 
 	wg.Wait()
 	count := 0
 	idSet.Range(func(key, value any) bool {
 		count++
-		return false
+		return true
 	})
-	fmt.Printf("成功生成%d个id", count)
+	fmt.Printf("\n成功生成%d个id\n", count)
 }
