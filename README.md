@@ -24,7 +24,10 @@ defer rdb.Close()
 
 4. 创建工作节点
 ```go
-worker, err := snowflake_flake.NewRedisWorker(rdb, "key", "lock-key", cfg, 0)
+// 使用分布式锁保证并发安全
+worker, err := redis_snowflake.NewRedisWorker(rdb, "key", "lock-key", cfg, 0)
+// 使用lua脚本保证并发安全
+worker, err := redis_snowflake.NewRedisWorkerNoLock(rdb, "key", cfg, 0)
 ```
 
 5. 生成id
