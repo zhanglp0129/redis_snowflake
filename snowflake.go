@@ -9,7 +9,6 @@ import (
 	"github.com/zhanglp0129/snowflake"
 	"reflect"
 	"slices"
-	"strconv"
 	"time"
 )
 
@@ -22,18 +21,6 @@ type RedisWorker struct {
 	rdb     redis.UniversalClient
 	key     string
 	lockKey string
-}
-
-// 存储在redis中hash类型的数据模型
-type redisModel struct {
-	Timestamp       int64 // 生成id的时间戳，从startTimestamp开始
-	TimestampMax    int64
-	TimestampOffset uint8
-	MachineId       int64
-	MachineIdOffset uint8
-	Seq             int64
-	SeqMax          int64
-	SeqOffset       uint8
 }
 
 // NewRedisWorker 创建一个雪花算法的redis工作节点；rdb，redis实例
@@ -113,65 +100,6 @@ func NewRedisWorker(rdb redis.UniversalClient, key, lockKey string, config snowf
 	}, nil
 }
 
-// 将模型写入到redis中
-func writeModel(rdb redis.UniversalClient, key string, model *redisModel) error {
-	rVal := reflect.ValueOf(model).Elem()
-	rTyp := rVal.Type()
-	n := rTyp.NumField()
-	values := make([]any, 0, 2*n)
-	for i := 0; i < n; i++ {
-		values = append(values, rTyp.Field(i).Name, rVal.Field(i).Interface())
-	}
-	return rdb.HMSet(context.Background(), key, values...).Err()
-}
-
-// 从redis中读取模型
-func readModel(rdb redis.UniversalClient, key string, model *redisModel) error {
-	rVal := reflect.ValueOf(model).Elem()
-	all, err := rdb.HGetAll(context.Background(), key).Result()
-	if err != nil {
-		return err
-	}
-
-	// 遍历读取到的数据
-	for k, v := range all {
-		field := rVal.FieldByName(k)
-		if field.CanInt() {
-			t, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return err
-			}
-			field.SetInt(t)
-		} else if field.CanUint() {
-			t, err := strconv.ParseUint(v, 10, 64)
-			if err != nil {
-				return err
-			}
-			field.SetUint(t)
-		}
-	}
-	return nil
-}
-
-// 根据参数获取id
-func getId(m *redisModel) (int64, error) {
-	// 先校验参数
-	if m.Timestamp < 0 || m.Timestamp > m.TimestampMax {
-		return 0, errors.New(fmt.Sprintf("timestamp %d is illegal", m.Timestamp))
-	}
-	if m.Seq < 0 || m.Seq > m.SeqMax {
-		return 0, errors.New(fmt.Sprintf("sequence %d is illegal", m.Seq))
-	}
-
-	// 生成id
-	var id int64
-	id |= m.Timestamp << m.TimestampOffset
-	id |= m.MachineId << m.MachineIdOffset
-	id |= m.Seq << m.SeqOffset
-
-	return id, nil
-}
-
 // GenerateId 生成雪花id
 func (w *RedisWorker) GenerateId() (int64, error) {
 	// 加锁
@@ -208,6 +136,25 @@ func (w *RedisWorker) GenerateId() (int64, error) {
 			return 0, err
 		}
 	}
+
+	return id, nil
+}
+
+// 根据参数获取id
+func getId(m *redisModel) (int64, error) {
+	// 先校验参数
+	if m.Timestamp < 0 || m.Timestamp > m.TimestampMax {
+		return 0, errors.New(fmt.Sprintf("timestamp %d is illegal", m.Timestamp))
+	}
+	if m.Seq < 0 || m.Seq > m.SeqMax {
+		return 0, errors.New(fmt.Sprintf("sequence %d is illegal", m.Seq))
+	}
+
+	// 生成id
+	var id int64
+	id |= m.Timestamp << m.TimestampOffset
+	id |= m.MachineId << m.MachineIdOffset
+	id |= m.Seq << m.SeqOffset
 
 	return id, nil
 }
