@@ -80,3 +80,38 @@ func TestGenerateIdConcurrency(t *testing.T) {
 	})
 	fmt.Printf("\n成功生成%d个id\n", count)
 }
+
+func TestGetMachineId(t *testing.T) {
+	config := snowflake.DefaultConfig
+	startTime, err := time.Parse("2006-01-02 15:04:05", "2024-08-14 00:00:00")
+	if err != nil {
+		panic(err)
+	}
+	config.SetStartTime(startTime)
+	rdb := redis.NewClient(&redis.Options{
+		Addr: "127.0.0.1:6379",
+	})
+
+	workers := make([]snowflake.WorkerInterface, 0, 16)
+	for i := 0; i < 16; i++ {
+		rw, err := NewRedisWorker(rdb, fmt.Sprintf("key%d", i), fmt.Sprintf("lock_key%d", i), config, int64(i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		workers = append(workers, rw)
+	}
+
+	// 生成id
+	for i, worker := range workers {
+		for j := 0; j < 100; j++ {
+			id, err := worker.GenerateId()
+			if err != nil {
+				t.Fatal(err)
+			}
+			machineId, err := snowflake.GetMachineId(config, id)
+			if machineId != int64(i) {
+				t.Errorf("机器码错误, %d", machineId)
+			}
+		}
+	}
+}
