@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/bsm/redislock v0.9.4
 	github.com/redis/go-redis/v9 v9.6.1
-	github.com/zhanglp0129/snowflake v1.0.3
+	github.com/zhanglp0129/snowflake v1.0.5
 )
 
 require (

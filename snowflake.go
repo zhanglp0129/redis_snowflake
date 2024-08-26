@@ -2,8 +2,6 @@ package redis_snowflake
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/bsm/redislock"
 	"github.com/redis/go-redis/v9"
 	"github.com/zhanglp0129/snowflake"
@@ -26,7 +24,7 @@ type RedisWorker struct {
 // NewRedisWorker 创建一个雪花算法的redis工作节点；rdb，redis实例
 // key，存储在redis中，雪花id生成参数对应的key；lockKey，分布式锁对应的key；
 // config，雪花算法相关配置；machineId，机器码
-func NewRedisWorker(rdb redis.UniversalClient, key, lockKey string, config snowflake.SnowFlakeConfig, machineId int64) (*RedisWorker, error) {
+func NewRedisWorker(rdb redis.UniversalClient, key, lockKey string, config snowflake.SnowFlakeConfig, machineId int64) (snowflake.WorkerInterface, error) {
 	// 加锁
 	lock, err := redislock.New(rdb).Obtain(context.Background(), lockKey, lockTTL, &redislock.Options{
 		RetryStrategy: redislock.ExponentialBackoff(50*time.Millisecond, 100*time.Millisecond),
@@ -66,13 +64,13 @@ func NewRedisWorker(rdb redis.UniversalClient, key, lockKey string, config snowf
 	// 检查配置
 	sumBits := config.TimestampBits + config.MachineIdBits + config.SeqBits
 	if sumBits != 63 {
-		return nil, errors.New(fmt.Sprintf("the sum of bits is %d, not 63", sumBits))
+		return nil, snowflake.BitsSumError
 	}
 
 	// 检查机器码
 	var machineMax int64 = (1 << config.MachineIdBits) - 1
 	if machineId < 0 || machineId > machineMax {
-		return nil, errors.New(fmt.Sprintf("machine id %d is illegal", machineId))
+		return nil, snowflake.MachineIdIllegal
 	}
 
 	// 创建初始redis数据模型
@@ -144,10 +142,10 @@ func (w *RedisWorker) GenerateId() (int64, error) {
 func getId(m *redisModel) (int64, error) {
 	// 先校验参数
 	if m.Timestamp < 0 || m.Timestamp > m.TimestampMax {
-		return 0, errors.New(fmt.Sprintf("timestamp %d is illegal", m.Timestamp))
+		return 0, snowflake.TimestampIllegal
 	}
 	if m.Seq < 0 || m.Seq > m.SeqMax {
-		return 0, errors.New(fmt.Sprintf("sequence %d is illegal", m.Seq))
+		return 0, snowflake.SeqIllegal
 	}
 
 	// 生成id

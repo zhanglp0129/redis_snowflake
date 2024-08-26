@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func getTestWorker() *RedisWorker {
+func getTestWorker() snowflake.WorkerInterface {
 	config := snowflake.DefaultConfig
 	startTime, err := time.Parse("2006-01-02 15:04:05", "2024-08-14 00:00:00")
 	if err != nil {

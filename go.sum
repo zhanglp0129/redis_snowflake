@@ -12,3 +12,7 @@ github.com/redis/go-redis/v9 v9.6.1 h1:HHDteefn6ZkTtY5fGUE8tj8uy85AHk6zP7CpzIAM0
 github.com/redis/go-redis/v9 v9.6.1/go.mod h1:0C0c6ycQsdpVNQpxb1njEQIqkx5UcsM8FJCQLgE9+RA=
 github.com/zhanglp0129/snowflake v1.0.3 h1:08XaRkekzFiqQss/aSqVBwaPjP3LydiWhc3/22+CPhg=
 github.com/zhanglp0129/snowflake v1.0.3/go.mod h1:AbFxGqjgwBbYLEY09UIJP8q8o7OmWLSj5acJmqj0iik=
+github.com/zhanglp0129/snowflake v1.0.4 h1:clhKM+kae9Hxbv9UW1f8vjUJgisNnWcj0aZ6ovnIPOg=
+github.com/zhanglp0129/snowflake v1.0.4/go.mod h1:AbFxGqjgwBbYLEY09UIJP8q8o7OmWLSj5acJmqj0iik=
+github.com/zhanglp0129/snowflake v1.0.5 h1:xZGEdYxCdFV+0GoDuzT3lqlaMImW5Tpi8vSbbOBbVNc=
+github.com/zhanglp0129/snowflake v1.0.5/go.mod h1:AbFxGqjgwBbYLEY09UIJP8q8o7OmWLSj5acJmqj0iik=
